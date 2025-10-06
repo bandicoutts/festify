@@ -163,6 +163,80 @@ export default function Home() {
             ))}
           </motion.div>
 
+          {/* How It Works Section */}
+          <motion.div
+            className="mt-24 max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5 }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+              How It Works
+            </h2>
+            <div className="space-y-8">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-festival-purple flex items-center justify-center text-white font-bold text-xl">
+                  1
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Connect Your Spotify</h3>
+                  <p className="text-white/70">
+                    Securely authenticate with Spotify using OAuth. We only request permission to view your top artists and recent listening history—nothing else.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-festival-pink flex items-center justify-center text-white font-bold text-xl">
+                  2
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-2">We Analyze Your Taste</h3>
+                  <p className="text-white/70">
+                    Our algorithm looks at your top artists from different time periods—your current obsessions, recent discoveries, and all-time favorites. We also check out your genres to create a unique festival vibe.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-festival-orange flex items-center justify-center text-white font-bold text-xl">
+                  3
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Your Festival is Born</h3>
+                  <p className="text-white/70">
+                    We generate a three-day festival with your most popular artists as headliners, organize everyone across multiple stages, assign realistic time slots, and give your festival a custom name. Each artist appears only once—just like a real festival!
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-festival-blue flex items-center justify-center text-white font-bold text-xl">
+                  4
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Share & Explore</h3>
+                  <p className="text-white/70">
+                    Click on any artist to open their Spotify page. Check out different days to see how we've organized your music taste into a cohesive festival experience.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 festival-card text-white">
+              <h3 className="text-lg font-semibold mb-3">🔒 Your Privacy Matters</h3>
+              <p className="text-sm text-white/70 mb-2">
+                <strong>What we access:</strong> Your top artists and recent listening history
+              </p>
+              <p className="text-sm text-white/70 mb-2">
+                <strong>What we DON'T access:</strong> Your playlists, saved songs, or personal information
+              </p>
+              <p className="text-sm text-white/70">
+                <strong>Data storage:</strong> Nothing is stored on our servers. Your festival exists only in your browser session. When you log out, it's gone.
+              </p>
+            </div>
+          </motion.div>
+
           {/* Footer */}
           <motion.p
             className="text-white/50 text-sm mt-16"
