@@ -23,8 +23,8 @@ export async function initiateSpotifyLogin(): Promise<void> {
   const state = generateRandomState();
 
   // Store verifier and state for callback validation
-  sessionStorage.setItem('spotify_code_verifier', codeVerifier);
-  sessionStorage.setItem('spotify_auth_state', state);
+  localStorage.setItem('spotify_code_verifier', codeVerifier);
+  localStorage.setItem('spotify_auth_state', state);
 
   // Build authorization URL
   const params = new URLSearchParams({
@@ -52,13 +52,13 @@ export async function handleSpotifyCallback(code: string, state: string): Promis
   expires_in: number;
 }> {
   // Validate state to prevent CSRF attacks
-  const storedState = sessionStorage.getItem('spotify_auth_state');
+  const storedState = localStorage.getItem('spotify_auth_state');
   if (state !== storedState) {
     throw new Error('State mismatch - possible CSRF attack');
   }
 
   // Retrieve code verifier
-  const codeVerifier = sessionStorage.getItem('spotify_code_verifier');
+  const codeVerifier = localStorage.getItem('spotify_code_verifier');
   if (!codeVerifier) {
     throw new Error('Code verifier not found');
   }
@@ -76,22 +76,30 @@ export async function handleSpotifyCallback(code: string, state: string): Promis
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to exchange token');
+    // Try to get the error, but handle if it's not JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to exchange token');
+    } else {
+      const text = await response.text();
+      console.error('Non-JSON response:', text);
+      throw new Error(`API route error: ${response.status}`);
+    }
   }
 
   const tokens = await response.json();
 
-  // Store tokens in session storage
-  sessionStorage.setItem('spotify_access_token', tokens.access_token);
-  sessionStorage.setItem('spotify_refresh_token', tokens.refresh_token);
-  sessionStorage.setItem('spotify_token_expires_at', 
+  // Store tokens in local storage
+  localStorage.setItem('spotify_access_token', tokens.access_token);
+  localStorage.setItem('spotify_refresh_token', tokens.refresh_token);
+  localStorage.setItem('spotify_token_expires_at', 
     (Date.now() + tokens.expires_in * 1000).toString()
   );
 
   // Clean up temporary storage
-  sessionStorage.removeItem('spotify_code_verifier');
-  sessionStorage.removeItem('spotify_auth_state');
+  localStorage.removeItem('spotify_code_verifier');
+  localStorage.removeItem('spotify_auth_state');
 
   return tokens;
 }
@@ -101,7 +109,7 @@ export async function handleSpotifyCallback(code: string, state: string): Promis
  * Returns null if not authenticated
  */
 export function getAccessToken(): string | null {
-  return sessionStorage.getItem('spotify_access_token');
+  return localStorage.getItem('spotify_access_token');
 }
 
 /**
@@ -109,7 +117,7 @@ export function getAccessToken(): string | null {
  */
 export function isAuthenticated(): boolean {
   const token = getAccessToken();
-  const expiresAt = sessionStorage.getItem('spotify_token_expires_at');
+  const expiresAt = localStorage.getItem('spotify_token_expires_at');
   
   if (!token || !expiresAt) {
     return false;
@@ -123,9 +131,9 @@ export function isAuthenticated(): boolean {
  * Logs out the user by clearing all stored tokens
  */
 export function logout(): void {
-  sessionStorage.removeItem('spotify_access_token');
-  sessionStorage.removeItem('spotify_refresh_token');
-  sessionStorage.removeItem('spotify_token_expires_at');
-  sessionStorage.removeItem('spotify_code_verifier');
-  sessionStorage.removeItem('spotify_auth_state');
+  localStorage.removeItem('spotify_access_token');
+  localStorage.removeItem('spotify_refresh_token');
+  localStorage.removeItem('spotify_token_expires_at');
+  localStorage.removeItem('spotify_code_verifier');
+  localStorage.removeItem('spotify_auth_state');
 }
