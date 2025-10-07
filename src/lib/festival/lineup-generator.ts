@@ -1,6 +1,6 @@
 import { SpotifyArtist, SpotifyTrack, RecentlyPlayedTrack } from '../spotify/api';
 import { Festival, FestivalDay } from '../types';
-import { generateFestivalName, generateFestivalDates, generateFestivalLocation } from './name-generator';
+import { generateFestivalName, generateFestivalDates, generateFestivalLocation, generateDayDates } from './name-generator';
 import { FESTIVAL_CONFIG, GENRE_CLASSIFICATIONS } from '../constants';
 
 interface SpotifyData {
@@ -149,11 +149,14 @@ function getUniqueArtists(
  * Get configuration for all festival days
  */
 function getDayConfigurations(data: SpotifyData, recentArtists: SpotifyArtist[]): DayConfig[] {
+  // Generate dynamic dates
+  const dayDates = generateDayDates();
+
   return [
     // Friday: Current Favorites
     {
-      name: 'Friday',
-      date: 'June 14',
+      name: dayDates[0].name,
+      date: dayDates[0].date,
       primaryArtists: data.topArtistsShort,
       stages: [
         { name: 'Main Stage', color: 'from-purple-500 to-pink-500', artistSource: 'primary' },
@@ -163,8 +166,8 @@ function getDayConfigurations(data: SpotifyData, recentArtists: SpotifyArtist[])
     },
     // Saturday: Mix of Medium-term + Recent Discoveries
     {
-      name: 'Saturday',
-      date: 'June 15',
+      name: dayDates[1].name,
+      date: dayDates[1].date,
       primaryArtists: data.topArtistsMedium,
       secondaryArtists: recentArtists,
       stages: [
@@ -175,8 +178,8 @@ function getDayConfigurations(data: SpotifyData, recentArtists: SpotifyArtist[])
     },
     // Sunday: All-Time Favorites & Chill Vibes
     {
-      name: 'Sunday',
-      date: 'June 16',
+      name: dayDates[2].name,
+      date: dayDates[2].date,
       primaryArtists: data.topArtistsLong,
       useChillFilter: true,
       stages: [

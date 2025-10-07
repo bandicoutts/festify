@@ -57,8 +57,31 @@ export function generateFestivalDates(): string {
   // Generate dates for next summer (June)
   const currentYear = new Date().getFullYear();
   const festivalYear = currentYear + 1;
-  
+
   return `June 14-16, ${festivalYear}`;
+}
+
+/**
+ * Generate individual day dates for the festival
+ * Returns an array of formatted date strings
+ */
+export function generateDayDates(): { name: string; date: string }[] {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+
+  // If we're past June, plan for next year
+  const festivalYear = currentMonth >= 5 ? currentYear + 1 : currentYear;
+
+  // Create dates for June 14, 15, 16
+  const dayNames = ['Friday', 'Saturday', 'Sunday'];
+  const monthName = 'June';
+  const startDay = 14;
+
+  return dayNames.map((name, index) => ({
+    name,
+    date: `${monthName} ${startDay + index}`,
+  }));
 }
 
 export function generateFestivalLocation(topGenres: string[]): string {

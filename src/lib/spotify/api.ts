@@ -31,10 +31,26 @@ export interface RecentlyPlayedTrack {
   played_at: string;
 }
 
+interface SpotifyPaginatedResponse<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  href: string;
+  next: string | null;
+  previous: string | null;
+}
+
+interface SpotifyUserProfile {
+  id: string;
+  display_name: string;
+  images: { url: string }[];
+}
+
 export class SpotifyAPI {
   constructor(private accessToken: string) {}
 
-  private async fetch(endpoint: string): Promise<any> {
+  private async fetch<T>(endpoint: string, retries = 0): Promise<T> {
     const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
@@ -44,7 +60,15 @@ export class SpotifyAPI {
     if (!response.ok) {
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
-        throw new Error(`Rate limited. Retry after ${retryAfter}s`);
+        const retrySeconds = retryAfter ? parseInt(retryAfter) : 1;
+
+        // Retry automatically if we haven't exceeded max retries
+        if (retries < 3) {
+          await new Promise(resolve => setTimeout(resolve, retrySeconds * 1000));
+          return this.fetch<T>(endpoint, retries + 1);
+        }
+
+        throw new Error(`Rate limited. Please try again in ${retrySeconds} seconds.`);
       }
       if (response.status === 401) {
         throw new Error('Unauthorized - token may be expired');
@@ -52,7 +76,7 @@ export class SpotifyAPI {
       throw new Error(`Spotify API error: ${response.status}`);
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   /**
@@ -64,7 +88,7 @@ export class SpotifyAPI {
     timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term',
     limit: number = SPOTIFY_API.MAX_ITEMS_PER_REQUEST
   ): Promise<SpotifyArtist[]> {
-    const data = await this.fetch(
+    const data = await this.fetch<SpotifyPaginatedResponse<SpotifyArtist>>(
       `/me/top/artists?time_range=${timeRange}&limit=${limit}`
     );
     return data.items;
@@ -77,7 +101,7 @@ export class SpotifyAPI {
     timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term',
     limit: number = SPOTIFY_API.MAX_ITEMS_PER_REQUEST
   ): Promise<SpotifyTrack[]> {
-    const data = await this.fetch(
+    const data = await this.fetch<SpotifyPaginatedResponse<SpotifyTrack>>(
       `/me/top/tracks?time_range=${timeRange}&limit=${limit}`
     );
     return data.items;
@@ -87,7 +111,7 @@ export class SpotifyAPI {
    * Get user's recently played tracks
    */
   async getRecentlyPlayed(limit: number = SPOTIFY_API.MAX_ITEMS_PER_REQUEST): Promise<RecentlyPlayedTrack[]> {
-    const data = await this.fetch(
+    const data = await this.fetch<SpotifyPaginatedResponse<RecentlyPlayedTrack>>(
       `/me/player/recently-played?limit=${limit}`
     );
     return data.items;
@@ -96,11 +120,7 @@ export class SpotifyAPI {
   /**
    * Get current user's profile
    */
-  async getUserProfile(): Promise<{
-    id: string;
-    display_name: string;
-    images: { url: string }[];
-  }> {
-    return this.fetch('/me');
+  async getUserProfile(): Promise<SpotifyUserProfile> {
+    return this.fetch<SpotifyUserProfile>('/me');
   }
 }

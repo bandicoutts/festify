@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { handleSpotifyCallback } from '@/lib/spotify/auth';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { motion } from 'framer-motion';
 
 export default function CallbackContent() {
@@ -32,7 +33,6 @@ export default function CallbackContent() {
         await handleSpotifyCallback(code, state);
         router.push('/festival');
       } catch (err) {
-        console.error('Callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');
         setTimeout(() => router.push('/'), 3000);
       }
@@ -55,35 +55,10 @@ export default function CallbackContent() {
           <p className="text-sm text-white/60">Redirecting back to home...</p>
         </div>
       ) : (
-        <div className="festival-card max-w-md mx-4">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="inline-block text-6xl mb-4"
-          >
-            🎵
-          </motion.div>
-          <h1 className="text-2xl font-bold mb-2">Connecting to Spotify</h1>
-          <p className="text-white/80">Generating your personalized festival...</p>
-          
-          <div className="flex justify-center gap-2 mt-6">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-3 h-3 bg-white rounded-full"
-                animate={{
-                  scale: [1, 1.5, 1],
-                  opacity: [0.3, 1, 0.3],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              />
-            ))}
-          </div>
-        </div>
+        <LoadingSpinner
+          title="Connecting to Spotify"
+          subtitle="Generating your personalized festival..."
+        />
       )}
     </motion.div>
   );

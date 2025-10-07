@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { isAuthenticated, logout } from '@/lib/spotify/auth';
 import { useFestivalData } from '@/hooks/useFestivalData';
 import { generateTimeSlot } from '@/lib/utils/time-slots';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { motion } from 'framer-motion';
 
 export default function FestivalPage() {
   const router = useRouter();
-  const { festival, loading, error } = useFestivalData();
+  const { festival, loading, error, refetch } = useFestivalData();
   const [selectedDay, setSelectedDay] = useState(0);
 
   useEffect(() => {
@@ -28,38 +29,10 @@ export default function FestivalPage() {
       <main className="min-h-screen gradient-festival">
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="festival-card text-white text-center max-w-md mx-4"
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="text-6xl mb-4"
-            >
-              🎵
-            </motion.div>
-            <h2 className="text-2xl font-bold mb-2">Creating Your Festival</h2>
-            <p className="text-white/80">Analyzing your Spotify data...</p>
-            <div className="flex justify-center gap-2 mt-6">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-3 h-3 bg-white rounded-full"
-                  animate={{
-                    scale: [1, 1.5, 1],
-                    opacity: [0.3, 1, 0.3],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: i * 0.2,
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
+          <LoadingSpinner
+            title="Creating Your Festival"
+            subtitle="Analyzing your Spotify data..."
+          />
         </div>
       </main>
     );
@@ -74,12 +47,20 @@ export default function FestivalPage() {
             <div className="text-6xl mb-4">😔</div>
             <h2 className="text-2xl font-bold mb-2">Oops!</h2>
             <p className="text-white/80 mb-6">{error}</p>
-            <button
-              onClick={() => router.push('/')}
-              className="px-6 py-3 bg-white/20 rounded-full hover:bg-white/30 transition-all"
-            >
-              Go Back Home
-            </button>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={refetch}
+                className="px-6 py-3 bg-white text-black rounded-full hover:bg-white/90 transition-all font-semibold"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => router.push('/')}
+                className="px-6 py-3 bg-white/20 rounded-full hover:bg-white/30 transition-all"
+              >
+                Go Back Home
+              </button>
+            </div>
           </div>
         </div>
       </main>

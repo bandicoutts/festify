@@ -113,20 +113,80 @@ export async function handleSpotifyCallback(code: string, state: string): Promis
 }
 
 /**
- * Gets the current access token
+ * Refreshes the access token using the refresh token
+ */
+export async function refreshAccessToken(): Promise<string> {
+  const refreshToken = localStorage.getItem('spotify_refresh_token');
+
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await fetch('/api/spotify/refresh', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!response.ok) {
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to refresh token');
+    } else {
+      throw new Error(`Failed to refresh token: ${response.status}`);
+    }
+  }
+
+  const tokens = await response.json();
+
+  // Update stored tokens
+  localStorage.setItem('spotify_access_token', tokens.access_token);
+  localStorage.setItem('spotify_token_expires_at',
+    (Date.now() + tokens.expires_in * 1000).toString()
+  );
+
+  return tokens.access_token;
+}
+
+/**
+ * Gets the current access token, refreshing if expired
  * Returns null if not authenticated
  */
-export function getAccessToken(): string | null {
-  return localStorage.getItem('spotify_access_token');
+export async function getAccessToken(): Promise<string | null> {
+  const token = localStorage.getItem('spotify_access_token');
+  const expiresAt = localStorage.getItem('spotify_token_expires_at');
+
+  if (!token || !expiresAt) {
+    return null;
+  }
+
+  // Check if token is expired or will expire in the next 5 minutes
+  const expiryTime = parseInt(expiresAt);
+  const bufferTime = 5 * 60 * 1000; // 5 minutes
+
+  if (Date.now() >= expiryTime - bufferTime) {
+    try {
+      return await refreshAccessToken();
+    } catch (error) {
+      // Clear tokens and return null so user can re-authenticate
+      logout();
+      return null;
+    }
+  }
+
+  return token;
 }
 
 /**
  * Checks if the user is authenticated
  */
 export function isAuthenticated(): boolean {
-  const token = getAccessToken();
+  const token = localStorage.getItem('spotify_access_token');
   const expiresAt = localStorage.getItem('spotify_token_expires_at');
-  
+
   if (!token || !expiresAt) {
     return false;
   }

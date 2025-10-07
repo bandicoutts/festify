@@ -16,14 +16,16 @@ export default function Home() {
     }
   }, [router]);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleLogin = async () => {
     setIsLoading(true);
+    setErrorMessage(null);
     try {
       await initiateSpotifyLogin();
     } catch (error) {
-      console.error('Login error:', error);
       setIsLoading(false);
-      alert('Failed to initiate login. Please check your environment variables.');
+      setErrorMessage('Failed to initiate login. Please check your environment variables.');
     }
   };
 
@@ -136,6 +138,17 @@ export default function Home() {
               </span>
             )}
           </motion.button>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 px-4 py-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-200 text-sm"
+            >
+              {errorMessage}
+            </motion.div>
+          )}
 
           {/* Features */}
           <motion.div
