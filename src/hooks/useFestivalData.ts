@@ -3,6 +3,7 @@ import { SpotifyAPI } from '@/lib/spotify/api';
 import { getAccessToken } from '@/lib/spotify/auth';
 import { generateFestival } from '@/lib/festival/lineup-generator';
 import { Festival } from '@/lib/types';
+import { SPOTIFY_API } from '@/lib/constants';
 
 interface UseFestivalDataResult {
   festival: Festival | null;
@@ -29,12 +30,12 @@ export function useFestivalData(): UseFestivalDataResult {
 
         console.log('📊 Fetching Spotify data...');
         // Fetch all required data in parallel
-        const [topArtistsShort, topArtistsMedium, topArtistsLong, recentlyPlayed] = 
+        const [topArtistsShort, topArtistsMedium, topArtistsLong, recentlyPlayed] =
           await Promise.all([
-            api.getTopArtists('short_term', 50),
-            api.getTopArtists('medium_term', 50),
-            api.getTopArtists('long_term', 50),
-            api.getRecentlyPlayed(50),
+            api.getTopArtists('short_term', SPOTIFY_API.MAX_ITEMS_PER_REQUEST),
+            api.getTopArtists('medium_term', SPOTIFY_API.MAX_ITEMS_PER_REQUEST),
+            api.getTopArtists('long_term', SPOTIFY_API.MAX_ITEMS_PER_REQUEST),
+            api.getRecentlyPlayed(SPOTIFY_API.MAX_ITEMS_PER_REQUEST),
           ]);
 
         console.log('✅ Data fetched:', {

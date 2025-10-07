@@ -4,34 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated, logout } from '@/lib/spotify/auth';
 import { useFestivalData } from '@/hooks/useFestivalData';
+import { generateTimeSlot } from '@/lib/utils/time-slots';
 import { motion } from 'framer-motion';
-
-// Generate realistic festival time slots based on artist position
-function generateTimeSlot(stageIndex: number, artistIndex: number, isHeadliner: boolean): string {
-  if (isHeadliner) {
-    return '9:30 PM'; // Headliners always close out
-  }
-  
-  // Different stages have different start times
-  const stageStartTimes = [
-    { hour: 14, minute: 0 },  // Main Stage starts at 2 PM
-    { hour: 15, minute: 30 }, // Second stage starts at 3:30 PM
-    { hour: 16, minute: 0 },  // Third stage starts at 4 PM
-  ];
-  
-  const startTime = stageStartTimes[stageIndex] || stageStartTimes[0];
-  const slotDuration = 75; // 75 minutes per artist (including setup)
-  
-  const totalMinutes = startTime.hour * 60 + startTime.minute + (artistIndex * slotDuration);
-  const hour = Math.floor(totalMinutes / 60) % 24;
-  const minute = totalMinutes % 60;
-  
-  const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const displayMinute = minute.toString().padStart(2, '0');
-  
-  return `${displayHour}:${displayMinute} ${period}`;
-}
 
 export default function FestivalPage() {
   const router = useRouter();

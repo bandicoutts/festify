@@ -1,3 +1,5 @@
+import { SPOTIFY_API } from '../constants';
+
 /**
  * Spotify Web API wrapper
  * https://developer.spotify.com/documentation/web-api
@@ -60,7 +62,7 @@ export class SpotifyAPI {
    */
   async getTopArtists(
     timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term',
-    limit: number = 50
+    limit: number = SPOTIFY_API.MAX_ITEMS_PER_REQUEST
   ): Promise<SpotifyArtist[]> {
     const data = await this.fetch(
       `/me/top/artists?time_range=${timeRange}&limit=${limit}`
@@ -73,7 +75,7 @@ export class SpotifyAPI {
    */
   async getTopTracks(
     timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term',
-    limit: number = 50
+    limit: number = SPOTIFY_API.MAX_ITEMS_PER_REQUEST
   ): Promise<SpotifyTrack[]> {
     const data = await this.fetch(
       `/me/top/tracks?time_range=${timeRange}&limit=${limit}`
@@ -84,7 +86,7 @@ export class SpotifyAPI {
   /**
    * Get user's recently played tracks
    */
-  async getRecentlyPlayed(limit: number = 50): Promise<RecentlyPlayedTrack[]> {
+  async getRecentlyPlayed(limit: number = SPOTIFY_API.MAX_ITEMS_PER_REQUEST): Promise<RecentlyPlayedTrack[]> {
     const data = await this.fetch(
       `/me/player/recently-played?limit=${limit}`
     );
