@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated, logout } from '@/lib/spotify/auth';
 import { useFestivalData } from '@/hooks/useFestivalData';
+import { useFavorites } from '@/hooks/useFavorites';
 import { generateTimeSlot } from '@/lib/utils/time-slots';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { motion } from 'framer-motion';
@@ -11,6 +12,7 @@ import { motion } from 'framer-motion';
 export default function FestivalPage() {
   const router = useRouter();
   const { festival, loading, error, refetch } = useFestivalData();
+  const { favorites, toggleFavorite, isFavorite, isHydrated } = useFavorites();
   const [selectedDay, setSelectedDay] = useState(0);
 
   useEffect(() => {
@@ -81,7 +83,25 @@ export default function FestivalPage() {
               <h1 className="text-2xl md:text-3xl font-bold text-white">
                 {festival.name}
               </h1>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => router.push('/planner')}
+                  className="relative px-4 py-2 text-sm bg-festival-pink/20 backdrop-blur-md rounded-full border border-festival-pink/40 text-white hover:bg-festival-pink/30 transition-all flex items-center gap-2"
+                >
+                  <svg
+                    className="w-4 h-4 fill-red-500"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                  <span className="hidden sm:inline">My Planner</span>
+                  <span className="sm:hidden">Planner</span>
+                  {isHydrated && favorites.length > 0 && (
+                    <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                      {favorites.length}
+                    </span>
+                  )}
+                </button>
                 <a
                   href="/about"
                   className="hidden md:block px-4 py-2 text-sm text-white/80 hover:text-white transition-all"
@@ -144,39 +164,77 @@ export default function FestivalPage() {
             Your Headliners
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {festival.headliners.map((artist, i) => (
-              <motion.a
-                key={artist.id}
-                href={artist.external_urls.spotify}
-                target="_blank"
-                rel="noopener noreferrer"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="festival-card text-center hover:scale-105 transition-all cursor-pointer"
-              >
-                {artist.images[0] && (
-                  <img
-                    src={artist.images[0].url}
-                    alt={artist.name}
-                    className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
-                  />
-                )}
-                <h4 className="text-xl font-bold text-white mb-2">
-                  {artist.name}
-                </h4>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {artist.genres.slice(0, 2).map((genre, idx) => (
-                    <span
-                      key={idx}
-                      className="text-xs px-2 py-1 bg-white/10 rounded-full text-white/70"
+            {festival.headliners.map((artist, i) => {
+              const favorited = isFavorite(artist.id);
+              // Find which day this headliner is on
+              const dayInfo = festival.days.find(d => d.headliner.id === artist.id);
+
+              return (
+                <motion.div
+                  key={artist.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="festival-card text-center hover:scale-105 transition-all relative"
+                >
+                  {/* Heart button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (dayInfo) {
+                        toggleFavorite({
+                          artistId: artist.id,
+                          artistName: artist.name,
+                          day: dayInfo.name,
+                          stageName: 'Main Stage',
+                          timeSlot: '9:30 PM',
+                        });
+                      }
+                    }}
+                    className="absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full transition-all"
+                  >
+                    <svg
+                      className={`w-5 h-5 transition-colors ${
+                        favorited ? 'fill-red-500 text-red-500' : 'fill-none text-white'
+                      }`}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
                     >
-                      {genre}
-                    </span>
-                  ))}
-                </div>
-              </motion.a>
-            ))}
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  </button>
+
+                  <a
+                    href={artist.external_urls.spotify}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    {artist.images[0] && (
+                      <img
+                        src={artist.images[0].url}
+                        alt={artist.name}
+                        className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+                      />
+                    )}
+                    <h4 className="text-xl font-bold text-white mb-2">
+                      {artist.name}
+                    </h4>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {artist.genres.slice(0, 2).map((genre, idx) => (
+                        <span
+                          key={idx}
+                          className="text-xs px-2 py-1 bg-white/10 rounded-full text-white/70"
+                        >
+                          {genre}
+                        </span>
+                      ))}
+                    </div>
+                  </a>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -214,13 +272,39 @@ export default function FestivalPage() {
             <p className="text-festival-yellow text-xs md:text-sm font-semibold tracking-wider uppercase mb-4">
               {currentDay.name} Headliner
             </p>
-            <a
-              href={currentDay.headliner.external_urls.spotify}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <div className="festival-card hover:scale-105 transition-all cursor-pointer">
+            <div className="festival-card hover:scale-105 transition-all relative">
+              {/* Heart button */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleFavorite({
+                    artistId: currentDay.headliner.id,
+                    artistName: currentDay.headliner.name,
+                    day: currentDay.name,
+                    stageName: 'Main Stage',
+                    timeSlot: '9:30 PM',
+                  });
+                }}
+                className="absolute top-3 right-3 z-10 w-12 h-12 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full transition-all"
+              >
+                <svg
+                  className={`w-6 h-6 transition-colors ${
+                    isFavorite(currentDay.headliner.id) ? 'fill-red-500 text-red-500' : 'fill-none text-white'
+                  }`}
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </button>
+
+              <a
+                href={currentDay.headliner.external_urls.spotify}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
                 {currentDay.headliner.images[0] && (
                   <img
                     src={currentDay.headliner.images[0].url}
@@ -242,8 +326,8 @@ export default function FestivalPage() {
                     </span>
                   ))}
                 </div>
-              </div>
-            </a>
+              </a>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -280,45 +364,76 @@ export default function FestivalPage() {
                     const originalIndex = stage.artists.indexOf(artist);
                     const isHeadliner = stage.name === 'Main Stage' && artist.id === currentDay.headliner.id;
                     const timeSlot = generateTimeSlot(stageIdx, originalIndex, isHeadliner);
-                    
+                    const favorited = isFavorite(artist.id);
+
                     return (
-                      <motion.a
+                      <motion.div
                         key={artist.id}
-                        href={artist.external_urls.spotify}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: displayIdx * 0.03 }}
-                        className="festival-card hover:scale-105 transition-transform cursor-pointer group"
+                        className="festival-card hover:scale-105 transition-transform group relative"
                       >
-                        {artist.images[0] && (
-                          <div className="relative mb-3">
-                            <img
-                              src={artist.images[0].url}
-                              alt={artist.name}
-                              className="w-full aspect-square object-cover rounded-lg"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all rounded-lg flex items-center justify-center">
-                              <svg 
-                                className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-all"
-                                fill="currentColor" 
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-                              </svg>
+                        {/* Heart button */}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleFavorite({
+                              artistId: artist.id,
+                              artistName: artist.name,
+                              day: currentDay.name,
+                              stageName: stage.name,
+                              timeSlot,
+                            });
+                          }}
+                          className="absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full transition-all"
+                        >
+                          <svg
+                            className={`w-5 h-5 transition-colors ${
+                              favorited ? 'fill-red-500 text-red-500' : 'fill-none text-white'
+                            }`}
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                          </svg>
+                        </button>
+
+                        <a
+                          href={artist.external_urls.spotify}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          {artist.images[0] && (
+                            <div className="relative mb-3">
+                              <img
+                                src={artist.images[0].url}
+                                alt={artist.name}
+                                className="w-full aspect-square object-cover rounded-lg"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all rounded-lg flex items-center justify-center">
+                                <svg
+                                  className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-all"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                                </svg>
+                              </div>
                             </div>
+                          )}
+                          <div className="text-center">
+                            <p className="text-xs md:text-sm text-festival-purple font-semibold mb-1">
+                              {timeSlot}
+                            </p>
+                            <h4 className="font-semibold text-white text-sm md:text-base">
+                              {artist.name}
+                            </h4>
                           </div>
-                        )}
-                        <div className="text-center">
-                          <p className="text-xs md:text-sm text-festival-purple font-semibold mb-1">
-                            {timeSlot}
-                          </p>
-                          <h4 className="font-semibold text-white text-sm md:text-base">
-                            {artist.name}
-                          </h4>
-                        </div>
-                      </motion.a>
+                        </a>
+                      </motion.div>
                     );
                   })}
                 </div>
