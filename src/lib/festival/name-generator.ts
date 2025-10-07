@@ -1,3 +1,5 @@
+import { SeededRandom } from '../utils/seeded-random';
+
 /**
  * Generates creative festival names based on user's top genres
  */
@@ -29,14 +31,14 @@ const genreSpecific: Record<string, string[]> = {
   'country': ['Honky Tonk', 'Nashville', 'Outlaw', 'Western'],
 };
 
-export function generateFestivalName(topGenres: string[]): string {
+export function generateFestivalName(topGenres: string[], random: SeededRandom): string {
   // Try to use genre-specific words if available
   let prefix = '';
   for (const genre of topGenres) {
     const genreLower = genre.toLowerCase();
     for (const [key, values] of Object.entries(genreSpecific)) {
       if (genreLower.includes(key)) {
-        prefix = values[Math.floor(Math.random() * values.length)];
+        prefix = random.choose(values);
         break;
       }
     }
@@ -45,10 +47,10 @@ export function generateFestivalName(topGenres: string[]): string {
 
   // Fallback to random adjective if no genre match
   if (!prefix) {
-    prefix = adjectives[Math.floor(Math.random() * adjectives.length)];
+    prefix = random.choose(adjectives);
   }
 
-  const suffix = nouns[Math.floor(Math.random() * nouns.length)];
+  const suffix = random.choose(nouns);
 
   return `${prefix} ${suffix}`;
 }
@@ -84,7 +86,7 @@ export function generateDayDates(): { name: string; date: string }[] {
   }));
 }
 
-export function generateFestivalLocation(topGenres: string[]): string {
+export function generateFestivalLocation(topGenres: string[], random: SeededRandom): string {
   const locations = [
     'Golden Gate Park, SF',
     'Desert Valley, CA',
@@ -98,5 +100,5 @@ export function generateFestivalLocation(topGenres: string[]): string {
     'Island Shores, HI',
   ];
 
-  return locations[Math.floor(Math.random() * locations.length)];
+  return random.choose(locations);
 }

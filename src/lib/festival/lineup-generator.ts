@@ -2,6 +2,7 @@ import { SpotifyArtist, SpotifyTrack, RecentlyPlayedTrack } from '../spotify/api
 import { Festival, FestivalDay } from '../types';
 import { generateFestivalName, generateFestivalDates, generateFestivalLocation, generateDayDates } from './name-generator';
 import { FESTIVAL_CONFIG, GENRE_CLASSIFICATIONS } from '../constants';
+import { SeededRandom, generateUserSeed } from '../utils/seeded-random';
 
 interface SpotifyData {
   topArtistsShort: SpotifyArtist[];
@@ -73,10 +74,15 @@ function generateFestivalFromData(data: SpotifyData): Festival {
   // Extract all unique genres
   const allGenres = extractTopGenres(allUniqueArtists);
 
-  // Generate festival metadata
-  const festivalName = generateFestivalName(allGenres);
+  // Create seeded random generator from user's top artists
+  // This ensures the same music taste always generates the same festival details
+  const seed = generateUserSeed(allUniqueArtists.map(a => a.id));
+  const random = new SeededRandom(seed);
+
+  // Generate festival metadata using seeded random
+  const festivalName = generateFestivalName(allGenres, random);
   const festivalDates = generateFestivalDates();
-  const festivalLocation = generateFestivalLocation(allGenres);
+  const festivalLocation = generateFestivalLocation(allGenres, random);
 
   // Get the headliners (one for each day)
   const headliners = sortedByPopularity.slice(0, FESTIVAL_CONFIG.REQUIRED_HEADLINERS);
