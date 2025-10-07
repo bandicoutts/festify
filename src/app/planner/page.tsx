@@ -58,7 +58,7 @@ export default function PlannerPage() {
     });
   });
 
-  // Helper to parse time strings like "2:00 PM" to minutes
+  // Helper to parse time strings like "2:00 PM" to minutes from midnight
   function parseTime(timeSlot: string): number {
     const match = timeSlot.match(/(\d+):(\d+)\s*(AM|PM)/i);
     if (!match) return 0;
@@ -73,14 +73,30 @@ export default function PlannerPage() {
     return hours * 60 + minutes;
   }
 
-  // Detect time conflicts
+  // Check if two time ranges overlap
+  // Each performance is 75 minutes long (TIME_SLOTS.SLOT_DURATION_MINUTES)
+  function timesOverlap(time1: number, time2: number): boolean {
+    const PERFORMANCE_DURATION = 75; // minutes
+    const end1 = time1 + PERFORMANCE_DURATION;
+    const end2 = time2 + PERFORMANCE_DURATION;
+
+    // Two ranges overlap if one starts before the other ends
+    return (
+      (time1 >= time2 && time1 < end2) || // time1 starts during time2's performance
+      (time2 >= time1 && time2 < end1) || // time2 starts during time1's performance
+      (time1 <= time2 && end1 >= end2) || // time1 completely contains time2
+      (time2 <= time1 && end2 >= end1)    // time2 completely contains time1
+    );
+  }
+
+  // Detect time conflicts (overlapping performances)
   function hasConflict(artist: FavoriteArtist): FavoriteArtist | null {
     const artistTime = parseTime(artist.timeSlot);
     const conflictingArtist = favorites.find(
       (other) =>
         other.artistId !== artist.artistId &&
         other.day === artist.day &&
-        parseTime(other.timeSlot) === artistTime
+        timesOverlap(artistTime, parseTime(other.timeSlot))
     );
     return conflictingArtist || null;
   }
@@ -210,14 +226,16 @@ export default function PlannerPage() {
                         <h4 className="text-xl font-bold text-white mb-1">{artist.artistName}</h4>
                         {conflict && (
                           <div className="flex items-center gap-2 mt-2 text-red-400 text-sm">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                               <path
                                 fillRule="evenodd"
                                 d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
                                 clipRule="evenodd"
                               />
                             </svg>
-                            Conflict with {conflict.artistName}
+                            <span>
+                              Overlaps with <strong>{conflict.artistName}</strong> at {conflict.timeSlot} on {conflict.stageName}
+                            </span>
                           </div>
                         )}
                       </div>
