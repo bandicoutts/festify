@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!;
-const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
-const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI!;
+// Validate environment variables
+if (!process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID) {
+  throw new Error('NEXT_PUBLIC_SPOTIFY_CLIENT_ID is not configured. Please check your .env file.');
+}
+if (!process.env.NEXT_PUBLIC_REDIRECT_URI) {
+  throw new Error('NEXT_PUBLIC_REDIRECT_URI is not configured. Please check your .env file.');
+}
+
+const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI;
 
 export async function POST(request: NextRequest) {
   try {

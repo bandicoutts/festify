@@ -265,7 +265,7 @@ function extractArtistsFromTracks(recentlyPlayed: RecentlyPlayedTrack[]): Spotif
           genres: [],
           images: item.track.album.images,
           popularity: item.track.popularity,
-          external_urls: { spotify: '' },
+          external_urls: { spotify: `https://open.spotify.com/artist/${artist.id}` },
         });
       }
     });
